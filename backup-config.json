@@ -1,0 +1,15 @@
+[
+  {
+    "sources": [
+      "%userprofile%/Contacts",
+      "%userprofile%/Desktop",
+      "%userprofile%/Documents",
+      "%userprofile%/Favorites",
+      "%userprofile%/Music",
+      "%userprofile%/Pictures",
+      "%userprofile%/Saved Games",
+      "%userprofile%/Videos"
+    ],
+    "destination": "backup/%username%"
+  }
+]
