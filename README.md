@@ -4,6 +4,8 @@
 
 [Download](https://simple-backup.djones.co/setup.exe)
 
+[Download sample backup-config.json](https://raw.githubusercontent.com/tortxof/simple-backup/master/backup-config.json)
+
 ### Usage
 
 The program will search for drives that have a `backup-config.json` in their
@@ -28,7 +30,7 @@ destination.
 ```
 
 This config will copy the users `Desktop` and `Documents` folders to the backup
-drive in a folder named after their username in a backup folder in the root of 
+drive in a folder named after their username in a backup folder in the root of
 the drive. For example, if the backup drive is `F:` and the username is `Alice`,
 folders `\backup\Alice\Desktop` and `\backup\Alice\Documents` will be created on
 drive `F:`.
