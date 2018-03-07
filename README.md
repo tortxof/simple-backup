@@ -2,7 +2,7 @@
 
 ## A simple backup program for Windows.
 
-[Download from simple-backup.djones.co](https://simple-backup.djones.co/)
+[Download](https://simple-backup.djones.co/setup.exe)
 
 ### Usage
 
