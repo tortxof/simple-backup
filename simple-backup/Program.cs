@@ -12,13 +12,11 @@ namespace simple_backup
 {
     public class BackupJob
     {
-        public string Drive { get; }
         public string Destination { get; }
         public List<string> Sources { get; }
 
-        public BackupJob(string drive, string destination, List<string> sources)
+        public BackupJob(string destination, List<string> sources)
         {
-            this.Drive = drive;
             this.Destination = destination;
             this.Sources = sources;
         }
@@ -98,15 +96,18 @@ namespace simple_backup
                     var configJobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonData);
                     foreach (var configJob in configJobs)
                     {
-                        jobs.Add(new BackupJob(drive, configJob.Destination, configJob.Sources));
+                        jobs.Add(new BackupJob(
+                            Path.Combine($"{drive}\\", configJob.Destination),
+                            configJob.Sources
+                        ));
                     }
                 }
             }
             foreach (var job in jobs)
             {
-                var destDir = new DirectoryInfo(Environment.ExpandEnvironmentVariables(
-                    Path.Combine($"{job.Drive}\\", job.Destination)
-                ));
+                var destDir = new DirectoryInfo(
+                    Environment.ExpandEnvironmentVariables(job.Destination)
+                );
                 destDir.Create();
                 Console.WriteLine($"Destination: {destDir.FullName}");
                 foreach (var source in job.Sources)
