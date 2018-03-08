@@ -36,7 +36,7 @@ namespace simple_backup
                 foreach (FileInfo sourceFile in source.EnumerateFiles())
                 {
                     var destFile = new FileInfo(Path.Combine(target.FullName, sourceFile.Name));
-                    if (!destFile.Exists || sourceFile.Length != destFile.Length && sourceFile.LastWriteTimeUtc != destFile.LastWriteTimeUtc)
+                    if (!destFile.Exists || sourceFile.Length != destFile.Length || sourceFile.LastWriteTimeUtc != destFile.LastWriteTimeUtc)
                     {
                         Console.WriteLine($"{sourceFile.FullName} -> {destFile.FullName}");
                         sourceFile.CopyTo(destFile.FullName, true);
