@@ -63,6 +63,56 @@ namespace simple_backup
             }
         }
 
+        static List<BackupJob> GetJobsForDrive(string drive)
+        {
+            var jobs = new List<BackupJob>();
+            var jsonConfig = new FileInfo($"{drive}\\backup-config.json");
+            var txtConfig = new FileInfo($"{drive}\\backup-config.txt");
+            if (jsonConfig.Exists)
+            {
+                Console.WriteLine($"JSON config found for drive {drive}");
+                string jsonData = "";
+                using (StreamReader sr = jsonConfig.OpenText())
+                {
+                    string s = "";
+                    while ((s = sr.ReadLine()) != null)
+                    {
+                        jsonData += s;
+                    }
+                }
+                var configJobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonData);
+                foreach (var configJob in configJobs)
+                {
+                    jobs.Add(new BackupJob(
+                        Path.Combine($"{drive}\\", configJob.Destination),
+                        configJob.Sources
+                    ));
+                }
+            }
+            else if (txtConfig.Exists)
+            {
+                Console.WriteLine($"Text config found for drive {drive}");
+                var lines = new List<string>();
+                using (StreamReader sr = txtConfig.OpenText())
+                {
+                    string s = "";
+                    while ((s = sr.ReadLine()) != null)
+                    {
+                        s = s.Trim();
+                        if (!s.Substring(0, 1).Equals("#"))
+                        {
+                            lines.Add(s);
+                        }
+                    }
+                    jobs.Add(new BackupJob(
+                        Path.Combine($"{drive}\\", lines[0]),
+                        lines.GetRange(1, lines.Count-1)
+                    ));
+                }
+            }
+            return jobs;
+        }
+
         static void Main(string[] args)
         {
             string systemDrive = Path.GetPathRoot(
@@ -80,28 +130,7 @@ namespace simple_backup
             }
             foreach (var drive in drives)
             {
-                var configFile = new FileInfo($"{drive}\\backup-config.json");
-                if (configFile.Exists)
-                {
-                    Console.WriteLine($"Config found for drive {drive}");
-                    string jsonData = "";
-                    using (StreamReader sr = configFile.OpenText())
-                    {
-                        string s = "";
-                        while ((s = sr.ReadLine()) != null)
-                        {
-                            jsonData += s;
-                        }
-                    }
-                    var configJobs = JsonConvert.DeserializeObject<List<BackupJob>>(jsonData);
-                    foreach (var configJob in configJobs)
-                    {
-                        jobs.Add(new BackupJob(
-                            Path.Combine($"{drive}\\", configJob.Destination),
-                            configJob.Sources
-                        ));
-                    }
-                }
+                jobs.AddRange(GetJobsForDrive(drive));
             }
             foreach (var job in jobs)
             {
