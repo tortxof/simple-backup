@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
@@ -99,7 +99,7 @@ namespace simple_backup
                     while ((s = sr.ReadLine()) != null)
                     {
                         s = s.Trim();
-                        if (!s.Substring(0, 1).Equals("#"))
+                        if (s.Length > 0 && !s.Substring(0, 1).Equals("#"))
                         {
                             lines.Add(s);
                         }
