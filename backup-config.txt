@@ -4,14 +4,14 @@
 # All other lines are sources.
 
 # Destination
-backup/%username%
+backup\%username%
 
 # Sources
-%userprofile%/Contacts
-%userprofile%/Desktop
-%userprofile%/Documents
-%userprofile%/Favorites
-%userprofile%/Music
-%userprofile%/Pictures
-%userprofile%/Saved Games
-%userprofile%/Videos
+%userprofile%\Contacts
+%userprofile%\Desktop
+%userprofile%\Documents
+%userprofile%\Favorites
+%userprofile%\Music
+%userprofile%\Pictures
+%userprofile%\Saved Games
+%userprofile%\Videos
