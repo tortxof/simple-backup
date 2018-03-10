@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
@@ -32,18 +33,18 @@ namespace simple_backup
                     var destFile = new FileInfo(Path.Combine(target.FullName, sourceFile.Name));
                     if (!destFile.Exists || sourceFile.Length != destFile.Length || sourceFile.LastWriteTimeUtc != destFile.LastWriteTimeUtc)
                     {
-                        Console.WriteLine($"{sourceFile.FullName} -> {destFile.FullName}");
+                        Console.Write("+");
                         sourceFile.CopyTo(destFile.FullName, true);
                     }
                     else
                     {
-                        // Console.WriteLine($"Up to date: {destFile.FullName}");
+                        Console.Write($".");
                     }
                 }
             }
             catch (UnauthorizedAccessException e)
             {
-                Console.WriteLine(e.Message);
+                Console.Write("!");
             }
             try
             {
@@ -55,7 +56,7 @@ namespace simple_backup
             }
             catch (UnauthorizedAccessException e)
             {
-                Console.WriteLine(e.Message);
+                Console.Write("!");
             }
         }
 
@@ -66,7 +67,7 @@ namespace simple_backup
             var txtConfig = new FileInfo($"{drive}\\backup-config.txt");
             if (jsonConfig.Exists)
             {
-                Console.WriteLine($"JSON config found for drive {drive}");
+                Console.WriteLine($"JSON config found for drive {drive}\n");
                 string jsonData = "";
                 using (StreamReader sr = jsonConfig.OpenText())
                 {
@@ -87,7 +88,7 @@ namespace simple_backup
             }
             else if (txtConfig.Exists)
             {
-                Console.WriteLine($"Text config found for drive {drive}");
+                Console.WriteLine($"Text config found for drive {drive}\n");
                 var lines = new List<string>();
                 using (StreamReader sr = txtConfig.OpenText())
                 {
@@ -114,9 +115,9 @@ namespace simple_backup
             string systemDrive = Path.GetPathRoot(
                 Environment.GetFolderPath(Environment.SpecialFolder.System)
             ).Substring(0, 2);
-            Console.WriteLine($"System drive: {systemDrive}");
             var drives = new List<string>();
             var jobs = new List<BackupJob>();
+            var subJobs = new List<Tuple<DirectoryInfo, DirectoryInfo>>();
             foreach (var drive in DriveInfo.GetDrives().Select(drive => drive.ToString().Substring(0, 2)))
             {
                 if (drive != systemDrive)
@@ -142,11 +143,18 @@ namespace simple_backup
                     {
                         var sourceDestDir = new DirectoryInfo(Path.Combine(destDir.FullName, sourceDir.Name));
                         sourceDestDir.Create();
-                        Console.WriteLine($"copy {sourceDir.FullName} to {sourceDestDir.FullName}");
-                        CopyRecursive(sourceDir, sourceDestDir);
+                        Console.WriteLine($"  Source: {sourceDir.FullName}");
+                        subJobs.Add(Tuple.Create(sourceDir, sourceDestDir));
                     }
                 }
+                Console.WriteLine("");
             }
+            foreach (var job in subJobs)
+            {
+                CopyRecursive(job.Item1, job.Item2);
+            }
+            Console.WriteLine("\n\nDone...");
+            Thread.Sleep(5000);
         }
     }
 }
