@@ -20,44 +20,76 @@ namespace simple_backup
     }
     class Program
     {
-        public static void CopyRecursive(DirectoryInfo source, DirectoryInfo target)
+        public static int[] CopyRecursive(DirectoryInfo source, DirectoryInfo target)
         {
+            string[] progressChars = { "|", "/", "-", "\\" };
+            int successCount = 0;
+            int skipCount = 0;
+            int failCount = 0;
             if (!target.Exists)
             {
                 target.Create();
             }
+            IEnumerable<FileInfo> sourceFiles = new List<FileInfo>();
             try
             {
-                foreach (FileInfo sourceFile in source.EnumerateFiles())
+                sourceFiles = source.EnumerateFiles();
+            }
+            catch (UnauthorizedAccessException) { }
+            foreach (FileInfo sourceFile in sourceFiles)
+            {
+                var destFile = new FileInfo(Path.Combine(target.FullName, sourceFile.Name));
+                if (!destFile.Exists || sourceFile.Length != destFile.Length || sourceFile.LastWriteTimeUtc != destFile.LastWriteTimeUtc)
                 {
-                    var destFile = new FileInfo(Path.Combine(target.FullName, sourceFile.Name));
-                    if (!destFile.Exists || sourceFile.Length != destFile.Length || sourceFile.LastWriteTimeUtc != destFile.LastWriteTimeUtc)
+                    try
                     {
-                        Console.Write("+");
                         sourceFile.CopyTo(destFile.FullName, true);
+                        successCount++;
                     }
-                    else
+                    catch (UnauthorizedAccessException)
                     {
-                        Console.Write($".");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("\rUnable to copy " + sourceFile.FullName);
+                        Console.ResetColor();
+                        failCount++;
+                    }
+                    catch (IOException)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("\rUnable to copy " + sourceFile.FullName);
+                        Console.ResetColor();
+                        failCount++;
                     }
                 }
+                else
+                {
+                    skipCount++;
+                }
+                Console.Write($"\b{progressChars[(successCount + skipCount + failCount) % 4]}");
             }
-            catch (UnauthorizedAccessException e)
-            {
-                Console.Write("!");
-            }
+            IEnumerable<DirectoryInfo> subDirs = new List<DirectoryInfo>();
             try
             {
-                foreach (var subDir in source.EnumerateDirectories())
+                subDirs = source.EnumerateDirectories();
+            }
+            catch (UnauthorizedAccessException) { }
+            foreach (var subDir in subDirs)
+            {
+                int[] counts = new int[3];
+                try
                 {
                     var nextTarget = target.CreateSubdirectory(subDir.Name);
-                    CopyRecursive(subDir, nextTarget);
+                    counts = CopyRecursive(subDir, nextTarget);
                 }
+                catch (IOException e)
+                {
+                    Console.WriteLine("\n" + e);
+                }
+                successCount += counts[0];
+                skipCount += counts[1];
+                failCount += counts[2];
             }
-            catch (UnauthorizedAccessException e)
-            {
-                Console.Write("!");
-            }
+            return new int[] { successCount, skipCount, failCount };
         }
 
         static List<BackupJob> GetJobsForDrive(string drive)
@@ -67,7 +99,7 @@ namespace simple_backup
             var txtConfig = new FileInfo($"{drive}\\backup-config.txt");
             if (jsonConfig.Exists)
             {
-                Console.WriteLine($"JSON config found for drive {drive}\n");
+                Console.WriteLine($"JSON config found for drive {drive}");
                 string jsonData = "";
                 using (StreamReader sr = jsonConfig.OpenText())
                 {
@@ -88,7 +120,7 @@ namespace simple_backup
             }
             else if (txtConfig.Exists)
             {
-                Console.WriteLine($"Text config found for drive {drive}\n");
+                Console.WriteLine($"Text config found for drive {drive}");
                 var lines = new List<string>();
                 using (StreamReader sr = txtConfig.OpenText())
                 {
@@ -103,7 +135,7 @@ namespace simple_backup
                     }
                     jobs.Add(new BackupJob(
                         Path.Combine($"{drive}\\", lines[0]),
-                        lines.GetRange(1, lines.Count-1)
+                        lines.GetRange(1, lines.Count - 1)
                     ));
                 }
             }
@@ -134,8 +166,18 @@ namespace simple_backup
                 var destDir = new DirectoryInfo(
                     Environment.ExpandEnvironmentVariables(job.Destination)
                 );
-                destDir.Create();
-                Console.WriteLine($"Destination: {destDir.FullName}");
+                try
+                {
+                    destDir.Create();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"\nWarning: Could not create destination directory: {destDir.FullName}");
+                    Console.ResetColor();
+                    continue;
+                }
+                Console.WriteLine($"\nDestination: {destDir.FullName}");
                 foreach (var source in job.Sources)
                 {
                     var sourceDir = new DirectoryInfo(Environment.ExpandEnvironmentVariables(source));
@@ -147,14 +189,21 @@ namespace simple_backup
                         subJobs.Add(Tuple.Create(sourceDir, sourceDestDir));
                     }
                 }
-                Console.WriteLine("");
             }
             foreach (var job in subJobs)
             {
-                CopyRecursive(job.Item1, job.Item2);
+                Console.WriteLine($"\nStarting backup to {job.Item2}");
+                int[] counts = CopyRecursive(job.Item1, job.Item2);
+                Console.WriteLine($"\b \nFinished backup to {job.Item2}");
+                Console.WriteLine($"  Copied: {counts[0]}");
+                Console.WriteLine($"  Skipped: {counts[1]}");
+                Console.WriteLine($"  Failed: {counts[2]}");
             }
-            Console.WriteLine("\n\nDone...");
-            Thread.Sleep(5000);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\nBackup Complete.");
+            Console.ResetColor();
+            Console.WriteLine("Press any key.");
+            Console.ReadKey();
         }
     }
 }
