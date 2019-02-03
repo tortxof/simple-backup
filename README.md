@@ -2,7 +2,7 @@
 
 ## A simple backup program for Windows.
 
-[Download](https://simple-backup.djones.co/setup.exe)
+[Download setup.exe](https://simple-backup.djones.co/setup.exe)
 
 [Download sample backup-config.json](https://raw.githubusercontent.com/tortxof/simple-backup/master/backup-config.json)
 
