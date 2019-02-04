@@ -202,8 +202,6 @@ namespace simple_backup
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("\nBackup Complete.");
             Console.ResetColor();
-            Console.WriteLine("Press any key.");
-            Console.ReadKey();
         }
     }
 }
